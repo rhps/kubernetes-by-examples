@@ -1,0 +1,123 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: redash-worker
+  labels:
+    app: redash-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redash-worker
+  template:
+    metadata:
+      labels:
+        app: redash-worker
+    spec:
+      containers:
+      - name: redash-worker
+        image: redash/redash
+        args:
+        - scheduler
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "0"
+        - name: REDASH_LOG_LEVEL
+          value: INFO
+        - name: REDASH_REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: REDASH_DATABASE_URL
+          #value: "postgresql://postgres@postgres/postgres"
+          value: "postgres://koinworks:CyB3r2Tow3r@postgres:5432/redashdb?sslmode=disable"
+        - name: QUEUES
+          value: "queries,scheduled_queries,celery"
+        - name: WORKERS_COUNT
+          value: "4"
+        - name: REDASH_MAIL_SERVER
+          value: "smtp.sendgrid.net"
+        - name: REDASH_MAIL_PORT
+          value: "2525"
+        - name: REDASH_MAIL_USERNAME
+          value: "apikey"
+        - name: REDASH_MAIL_PASSWORD
+          value: "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"
+        - name: REDASH_MAIL_DEFAULT_SENDER
+          value: "data-services@koinworks.com"
+        - name: REDASH_HOST
+          value: "http://35.198.255.77"
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: redash
+  labels:
+    app: redash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redash
+  template:
+    metadata:
+      labels:
+        app: redash
+    spec:
+      containers:
+      - name: redash
+        image: redash/redash
+        # args: ["server"]
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "0"
+        - name: REDASH_LOG_LEVEL
+          value: INFO
+        - name: REDASH_REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: REDASH_DATABASE_URL
+          value: "postgres://koinworks:CyB3r2Tow3r@postgres:5432/redashdb?sslmode=disable"
+        - name: REDASH_COOKIE_SECRET
+          value: veryverysecret
+        - name: REDASH_WEB_WORKERS
+          value: "4"
+        - name: REDASH_MAIL_SERVER
+          value: "smtp.sendgrid.net"
+        - name: REDASH_MAIL_PORT
+          value: "2525"
+        - name: REDASH_MAIL_USERNAME
+          value: "apikey"
+        - name: REDASH_MAIL_PASSWORD
+          value: "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"
+        - name: REDASH_MAIL_DEFAULT_SENDER
+          value: "data-services@koinworks.com"
+        - name: REDASH_HOST
+          value: "http://35.198.255.77"
+        command:
+        - /bin/sh
+        - -c
+        - /app/bin/docker-entrypoint create_db; /app/bin/docker-entrypoint server
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: redash
+  name: redash
+spec:
+  selector:
+    app: redash
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 5000
+  type: NodePort
+# kubectl exec -it redash-5bb8f64c58-x6qhm --namespace production -c redash -- /bin/sh
+# bin/run ./manage.py database create_tables
+# https://estl.tech/deploying-redis-with-persistence-on-google-kubernetes-engine-c1d60f70a043
+# https://redash.io/help/open-source/dev-guide/setup
+# https://github.com/viuts/kubernetes-redash
+# https://github.com/tuananh/redash-kubernetes
