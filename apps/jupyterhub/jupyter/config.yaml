@@ -1,0 +1,46 @@
+proxy:
+  secretToken: 1bc21bf28e7ca16086928ed8cdc4bb2a08de020bb8d91250708e59c04440cca3
+auth:
+  admin:
+    users:
+      - data
+singleuser:
+  profileList:
+    - display_name: "Small: default"
+      description: |
+        A small job. 1 CPU, no GPU. This is the default.
+      default: True
+      kubespawner_override:
+        # cpu_limit: 1
+        # cpu_guarantee: 1
+        # mem_limit: "1G"
+        # mem_guarantee: "512M"
+        extra_resource_limits: {}
+    - display_name: "Big: 2 CPUs"
+      description: |
+        A big job. 2 CPUs, no GPU, and 15GB of RAM
+      kubespawner_override:
+        # cpu_limit: 2
+        # cpu_guarantee: 1
+        # mem_limit: "10G"
+        # mem_guaranttee: "2G"
+        extra_resource_limits: {}
+    - display_name: "GPU job"
+      description: |
+        This configuration gives you 2 CPUs, 15GB of RAM, and a GPU
+      kubespawner_override:
+        image: consideratio/singleuser-gpu:v0.3.0
+        # cpu_limit: 2
+        # cpu_guarantee: 1
+        # mem_limit: "15G"
+        # mem_guarantee: "4G"
+        extra_resource_limits:
+          nvidia.com/gpu: "1"
+        nodeSelector:
+          accelerator: nvidia-tesla-t4
+scheduling:
+  podPriority:
+    enabled: true
+  userPlaceholder:
+    enabled: true
+    replicas: 10
